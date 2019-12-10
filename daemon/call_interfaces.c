@@ -984,6 +984,11 @@ static const char *call_offer_answer_ng(bencode_item_t *input,
 			/* call == NULL, should create call */
 			call = call_get_or_create(&flags.call_id, CT_OWN_CALL);
 		}
+
+		if (!call->rtpe_connection_addr.len) {
+			call->rtpe_connection_addr.s = call_malloc(call, 64);
+			format_network_address(&call->rtpe_connection_addr, streams.head->data, &flags, 0);
+		}
 	}
 
 	errstr = "Unknown call-id";
