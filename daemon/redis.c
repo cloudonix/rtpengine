@@ -369,7 +369,9 @@ void on_redis_notification(redisAsyncContext *actx, void *reply, void *privdata)
 				goto err;
 			}
 		}
+		rlog(LOG_WARN, "Start json_restore_call functio");
 		json_restore_call(r, &callid, CT_FOREIGN_CALL);
+        rlog(LOG_WARN, "End json_restore_call functio");
 	}
 
 	if (strncmp(rr->element[3]->str,"del",3)==0) {
@@ -1551,8 +1553,9 @@ static void json_restore_call(struct redis *r, const str *callid, enum call_type
 	err = "could not read JSON data";
 	if (!root_reader)
 		goto err1;
-
+    rlog(LOG_WARN, "Start call_get_or_create functio");
 	c = call_get_or_create(callid, type);
+    rlog(LOG_WARN, "End call_get_or_create functio");
 	err = "failed to create call struct";
 	if (!c)
 		goto err1;
