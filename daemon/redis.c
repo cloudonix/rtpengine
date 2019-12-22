@@ -301,6 +301,7 @@ err:
 
 
 void on_redis_notification(redisAsyncContext *actx, void *reply, void *privdata) {
+    rlog(LOG_WARN, "Start func on_redis_notification!");
 	struct redis *r = 0;
 	struct call *c = NULL;
 	str callid;
