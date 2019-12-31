@@ -1126,6 +1126,11 @@ static int redis_sfds(struct call *c, struct redis_list *sfds) {
 	socket_t *sock;
 	int port;
 	const char *err;
+	
+	if (IS_FOREIGN_CALL(c)) {
+		rlog(LOG_INFO, "Reading foreign call from Redis, skipping opening ports");
+		return 0;
+	}
 
 	for (i = 0; i < sfds->len; i++) {
 		rh = &sfds->rh[i];
