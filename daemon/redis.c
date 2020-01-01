@@ -388,7 +388,8 @@ void on_redis_notification(redisAsyncContext *actx, void *reply, void *privdata)
 		}
 		call_destroy(c);
 	}
-
+	
+	rlog(LOG_WARN, "End func on_redis_notification!");
 err:
 	if (c) {
 		// because of call_get(..)
