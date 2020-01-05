@@ -1144,8 +1144,6 @@ static int redis_sfds(struct call *c, struct redis_list *sfds) {
 		err = "'local_intf_uid' key not present";
 		if (redis_hash_get_unsigned(&loc_uid, rh, "local_intf_uid"))
 			goto err;
-		if (!redis_hash_get_str(&rtpe_addr, &call, "rtpe_connection_addr"))
-			call_str_cpy(c, &sfd->rtpe_connection_addr, &rtpe_addr);
 
 		err = "socket family not known";
 		fam = get_socket_family_rfc(&family);
@@ -1176,6 +1174,9 @@ static int redis_sfds(struct call *c, struct redis_list *sfds) {
 		sfd = stream_fd_new(sock, c, loc);
 
 		sfds->ptrs[i] = sfd;
+
+		if (!redis_hash_get_str(&rtpe_addr, rh, "rtpe_connection_addr"))
+			call_str_cpy(c, &sfd->rtpe_connection_addr, &rtpe_addr);
 	}
 	return 0;
 
