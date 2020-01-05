@@ -1117,7 +1117,7 @@ static int redis_hash_get_sdes_params(GQueue *out, const struct redis_hash *h, c
 
 static int redis_sfds(struct call *c, struct redis_list *sfds) {
 	unsigned int i;
-	str family, intf_name;
+	str family, intf_name, rtpe_addr;
 	struct redis_hash *rh;
 	sockfamily_t *fam;
 	struct logical_intf *lif;
@@ -1144,6 +1144,8 @@ static int redis_sfds(struct call *c, struct redis_list *sfds) {
 		err = "'local_intf_uid' key not present";
 		if (redis_hash_get_unsigned(&loc_uid, rh, "local_intf_uid"))
 			goto err;
+		if (!redis_hash_get_str(&rtpe_addr, &call, "rtpe_connection_addr"))
+			call_str_cpy(c, &sfd->rtpe_connection_addr, &rtpe_addr);
 
 		err = "socket family not known";
 		fam = get_socket_family_rfc(&family);
@@ -1159,8 +1161,8 @@ static int redis_sfds(struct call *c, struct redis_list *sfds) {
 			goto err;
 
 		if (IS_FOREIGN_CALL(c)) {
-			rlog(LOG_INFO, "Reading foreign call from Redis, skipping opening port %d", port);
-			continue;
+			rlog(LOG_INFO, "Reading foreign call from Redis, using random port instead of specified %d", port);
+			port = 0;
 		}
 		
 		err = "failed to open ports";
@@ -1606,8 +1608,6 @@ static void json_restore_call(struct redis *r, const str *callid, enum call_type
 		c->created_from = call_strdup(c, id.s);
 	if (!redis_hash_get_str(&id, &call, "created_from_addr"))
 		sockaddr_parse_any_str(&c->created_from_addr, &id);
-	if (!redis_hash_get_str(&id, &call, "rtpe_connection_addr"))
-		call_str_cpy(c, &c->rtpe_connection_addr, &id);
 	if (!redis_hash_get_int(&i, &call, "block_dtmf"))
 		c->block_dtmf = i ? 1 : 0;
 	if (!redis_hash_get_int(&i, &call, "block_media"))
@@ -1891,7 +1891,6 @@ char* redis_encode_json(struct call *c) {
 			JSON_SET_SIMPLE("ml_deleted","%ld",(long int) c->ml_deleted);
 			JSON_SET_SIMPLE_CSTR("created_from",c->created_from);
 			JSON_SET_SIMPLE_CSTR("created_from_addr",sockaddr_print_buf(&c->created_from_addr));
-			JSON_SET_SIMPLE_STR("rtpe_connection_addr", &c->rtpe_connection_addr);
 			JSON_SET_SIMPLE("redis_hosted_db","%u",c->redis_hosted_db);
 			JSON_SET_SIMPLE_STR("recording_metadata",&c->metadata);
 			JSON_SET_SIMPLE("block_dtmf","%i",c->block_dtmf ? 1 : 0);
@@ -1918,7 +1917,7 @@ char* redis_encode_json(struct call *c) {
 				JSON_SET_SIMPLE_STR("logical_intf",&sfd->local_intf->logical->name);
 				JSON_SET_SIMPLE("local_intf_uid","%u",sfd->local_intf->unique_id);
 				JSON_SET_SIMPLE("stream","%u",sfd->stream->unique_id);
-
+				JSON_SET_SIMPLE_STR("rtpe_connection_addr", &sfd->rtpe_connection_addr);
 			}
 			json_builder_end_object (builder);
 

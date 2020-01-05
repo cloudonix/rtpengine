@@ -834,7 +834,7 @@ next_il:
 	return em;
 }
 
-static void __assign_stream_fds(struct call_media *media, GQueue *intf_sfds) {
+static void __assign_stream_fds(struct call_media *media, GQueue *intf_sfds, struct sdp_ng_flags *flags) {
 	GList *l, *k;
 	struct packet_stream *ps;
 	struct stream_fd *sfd, *intf_sfd;
@@ -855,6 +855,11 @@ static void __assign_stream_fds(struct call_media *media, GQueue *intf_sfds) {
 			if (!sfd) return ;
 
 			sfd->stream = ps;
+			if (!sfd->rtpe_connection_addr.len) {
+				sfd->rtpe_connection_addr.s = call_malloc(media->call, 64);
+				format_network_address(&sfd->rtpe_connection_addr, ps, flags, 0);
+			}
+			
 			g_queue_push_tail(&ps->sfds, sfd);
 
 			if (ps->selected_sfd == sfd)
@@ -877,14 +882,14 @@ static void __assign_stream_fds(struct call_media *media, GQueue *intf_sfds) {
 	}
 }
 
-static int __wildcard_endpoint_map(struct call_media *media, unsigned int num_ports) {
+static int __wildcard_endpoint_map(struct call_media *media, unsigned int num_ports, struct sdp_ng_flags *flags) {
 	struct endpoint_map *em;
 
 	em = __get_endpoint_map(media, num_ports, NULL, NULL);
 	if (!em)
 		return -1;
 
-	__assign_stream_fds(media, &em->intf_sfds);
+	__assign_stream_fds(media, &em->intf_sfds, flags);
 
 	return 0;
 }
@@ -1997,13 +2002,13 @@ int monologue_offer_answer(struct call_monologue *other_ml, GQueue *streams,
 		}
 
 		__num_media_streams(media, num_ports);
-		__assign_stream_fds(media, &em->intf_sfds);
+		__assign_stream_fds(media, &em->intf_sfds, flags);
 
 		if (__num_media_streams(other_media, num_ports)) {
 			/* new streams created on OTHER side. normally only happens in
 			 * initial offer. create a wildcard endpoint_map to be filled in
 			 * when the answer comes. */
-			if (__wildcard_endpoint_map(other_media, num_ports))
+			if (__wildcard_endpoint_map(other_media, num_ports, flags))
 				goto error_ports;
 		}
 
@@ -2018,11 +2023,6 @@ init:
 		ice_update(media->ice_agent, NULL); /* this is in case rtcp-mux has changed */
 
 		recording_setup_media(media);
-		
-		if (!call->rtpe_connection_addr.len) {
-			call->rtpe_connection_addr.s = call_malloc(call, 64);
-			format_network_address(&call->rtpe_connection_addr, media->streams.head->data, flags, 0);
-		}
 	}
 
 	return 0;
