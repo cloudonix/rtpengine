@@ -855,10 +855,6 @@ static void __assign_stream_fds(struct call_media *media, GQueue *intf_sfds, str
 			if (!sfd) return ;
 
 			sfd->stream = ps;
-			if (!sfd->rtpe_connection_addr.len) {
-				sfd->rtpe_connection_addr.s = call_malloc(media->call, 64);
-				format_network_address(&sfd->rtpe_connection_addr, ps, flags, 0);
-			}
 			
 			g_queue_push_tail(&ps->sfds, sfd);
 
@@ -1084,7 +1080,7 @@ void __rtp_stats_update(GHashTable *dst, GHashTable *src) {
 	/* we leave previously added but now removed payload types in place */
 }
 
-static int __init_streams(struct call_media *A, struct call_media *B, const struct stream_params *sp) {
+static int __init_streams(struct call_media *A, struct call_media *B, const struct stream_params *sp, struct sdp_ng_flags *flags) {
 	GList *la, *lb;
 	struct packet_stream *a, *ax, *b;
 	unsigned int port_off = 0;
@@ -1171,6 +1167,16 @@ static int __init_streams(struct call_media *A, struct call_media *B, const stru
 		lb = lb->next;
 
 		port_off += 2;
+
+		for (GList *l = a->sfds.head; l; l = l->next) {
+			struct stream_fd *sfd = l->data;
+			if (!sfd->rtpe_connection_addr.len) {
+				sfd->rtpe_connection_addr.s = call_malloc(A->call, 64);
+				format_network_address(&sfd->rtpe_connection_addr, a, flags, 0);
+				rlog(LOG_INFO, "Stored SFD media address %s",sfd->rtpe_connection_addr.s);
+			}
+		}
+
 	}
 
 	return 0;
@@ -2013,9 +2019,9 @@ int monologue_offer_answer(struct call_monologue *other_ml, GQueue *streams,
 		}
 
 init:
-		if (__init_streams(media, other_media, NULL))
+		if (__init_streams(media, other_media, NULL, flags))
 			return -1;
-		if (__init_streams(other_media, media, sp))
+		if (__init_streams(other_media, media, sp, flags))
 			return -1;
 
 		/* we are now ready to fire up ICE if so desired and requested */
