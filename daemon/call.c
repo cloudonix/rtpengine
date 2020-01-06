@@ -1168,7 +1168,7 @@ static int __init_streams(struct call_media *A, struct call_media *B, const stru
 
 		port_off += 2;
 
-		for (GList *l = a->sfds.head; l; l = l->next) {
+		for (GList *l = ax->sfds.head; l; l = l->next) {
 			struct stream_fd *sfd = l->data;
 			if (!sfd->rtpe_connection_addr.len) {
 				sfd->rtpe_connection_addr.s = call_malloc(A->call, 64);
