@@ -1918,7 +1918,8 @@ char* redis_encode_json(struct call *c) {
 				JSON_SET_SIMPLE_STR("logical_intf",&sfd->local_intf->logical->name);
 				JSON_SET_SIMPLE("local_intf_uid","%u",sfd->local_intf->unique_id);
 				JSON_SET_SIMPLE("stream","%u",sfd->stream->unique_id);
-				JSON_SET_SIMPLE_STR("rtpe_connection_addr", &sfd->rtpe_connection_addr);
+				if (sfd->rtpe_connection_addr.len)
+					JSON_SET_SIMPLE_STR("rtpe_connection_addr", &sfd->rtpe_connection_addr);
 			}
 			json_builder_end_object (builder);
 
