@@ -1801,6 +1801,13 @@ static void __update_media_id(struct call_media *media, struct call_media *other
 static void __update_rtpe_address(struct call_media* media, struct sdp_ng_flags *flags) {
 	struct packet_stream *ps;
 	
+	if (IS_FOREIGN_CALL(media->call)) {
+		rlog(LOG_INFO, "Setting up media for foreign call, not rewriting media address %s", 
+			 media->rtpe_connection_addr.len ? media->rtpe_connection_addr.s : "UNKNOWN");
+		return;
+	}
+		
+	
 	if (media->rtpe_connection_addr.len || !media->streams.head)
 		return;
 	
