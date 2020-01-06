@@ -388,7 +388,7 @@ void on_redis_notification(redisAsyncContext *actx, void *reply, void *privdata)
 		}
 		call_destroy(c);
 	}
-	
+
 	rlog(LOG_WARN, "End func on_redis_notification!");
 err:
 	if (c) {
@@ -1128,7 +1128,7 @@ static int redis_sfds(struct call *c, struct redis_list *sfds) {
 	socket_t *sock;
 	int port;
 	const char *err;
-	
+
 	for (i = 0; i < sfds->len; i++) {
 		rh = &sfds->rh[i];
 
@@ -1173,8 +1173,8 @@ static int redis_sfds(struct call *c, struct redis_list *sfds) {
 				goto err;
 			set_tos(sock, c->tos);
 		}
-
 		sfd = stream_fd_new(sock, c, loc);
+
 		sfds->ptrs[i] = sfd;
 	}
 	return 0;
@@ -1565,6 +1565,7 @@ static void json_restore_call(struct redis *r, const str *callid, enum call_type
 	err = "could not read JSON data";
 	if (!root_reader)
 		goto err1;
+
     rlog(LOG_WARN, "Start call_get_or_create functio");
 	c = call_get_or_create(callid, type);
     rlog(LOG_WARN, "End call_get_or_create functio");
@@ -1920,6 +1921,7 @@ char* redis_encode_json(struct call *c) {
 				JSON_SET_SIMPLE_STR("logical_intf",&sfd->local_intf->logical->name);
 				JSON_SET_SIMPLE("local_intf_uid","%u",sfd->local_intf->unique_id);
 				JSON_SET_SIMPLE("stream","%u",sfd->stream->unique_id);
+
 			}
 			json_builder_end_object (builder);
 

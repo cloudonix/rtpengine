@@ -855,7 +855,6 @@ static void __assign_stream_fds(struct call_media *media, GQueue *intf_sfds) {
 			if (!sfd) return ;
 
 			sfd->stream = ps;
-			
 			g_queue_push_tail(&ps->sfds, sfd);
 
 			if (ps->selected_sfd == sfd)
@@ -1167,7 +1166,6 @@ static int __init_streams(struct call_media *A, struct call_media *B, const stru
 		lb = lb->next;
 
 		port_off += 2;
-
 	}
 
 	return 0;
@@ -1806,8 +1804,7 @@ static void __update_rtpe_address(struct call_media* media, struct sdp_ng_flags 
 			 media->rtpe_connection_addr.len ? media->rtpe_connection_addr.s : "UNKNOWN");
 		return;
 	}
-		
-	
+
 	if (media->rtpe_connection_addr.len || !media->streams.head)
 		return;
 	
