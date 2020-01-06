@@ -327,6 +327,7 @@ struct call_media {
 	int			ptime; // either from SDP or overridden
 
 	volatile unsigned int	media_flags;
+	str			rtpe_connection_addr;
 };
 
 /* half a dialogue */

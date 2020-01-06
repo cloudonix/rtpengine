@@ -115,7 +115,6 @@ struct stream_fd {
 	struct packet_stream		*stream;	/* LOCK: call->master_lock */
 	struct crypto_context		crypto;		/* IN direction, LOCK: stream->in_lock */
 	struct dtls_connection		dtls;		/* LOCK: stream->in_lock */
-	str			rtpe_connection_addr;
 };
 struct media_packet {
 	str raw;

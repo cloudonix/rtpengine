@@ -1117,7 +1117,7 @@ static int redis_hash_get_sdes_params(GQueue *out, const struct redis_hash *h, c
 
 static int redis_sfds(struct call *c, struct redis_list *sfds) {
 	unsigned int i;
-	str family, intf_name, rtpe_addr;
+	str family, intf_name;
 	struct redis_hash *rh;
 	sockfamily_t *fam;
 	struct logical_intf *lif;
@@ -1174,9 +1174,6 @@ static int redis_sfds(struct call *c, struct redis_list *sfds) {
 		sfd = stream_fd_new(sock, c, loc);
 
 		sfds->ptrs[i] = sfd;
-
-		if (!redis_hash_get_str(&rtpe_addr, rh, "rtpe_connection_addr"))
-			call_str_cpy(c, &sfd->rtpe_connection_addr, &rtpe_addr);
 	}
 	return 0;
 
@@ -1314,6 +1311,9 @@ static int json_medias(struct call *c, struct redis_list *medias, JsonReader *ro
 					"media_flags"))
 			return -1;
 
+		if (!redis_hash_get_str(&s, rh, "rtpe_addr"))
+			call_str_cpy(c, &med->rtpe_connection_addr, &s);
+		
 		if (redis_hash_get_sdes_params(&med->sdes_in, rh, "sdes_in") < 0)
 			return -1;
 		if (redis_hash_get_sdes_params(&med->sdes_out, rh, "sdes_out") < 0)
@@ -1918,8 +1918,6 @@ char* redis_encode_json(struct call *c) {
 				JSON_SET_SIMPLE_STR("logical_intf",&sfd->local_intf->logical->name);
 				JSON_SET_SIMPLE("local_intf_uid","%u",sfd->local_intf->unique_id);
 				JSON_SET_SIMPLE("stream","%u",sfd->stream->unique_id);
-				if (sfd->rtpe_connection_addr.len)
-					JSON_SET_SIMPLE_STR("rtpe_connection_addr", &sfd->rtpe_connection_addr);
 			}
 			json_builder_end_object (builder);
 
@@ -2054,7 +2052,8 @@ char* redis_encode_json(struct call *c) {
 				JSON_SET_SIMPLE_STR("logical_intf",&media->logical_intf->name);
 				JSON_SET_SIMPLE("ptime","%i",media->ptime);
 				JSON_SET_SIMPLE("media_flags","%u",media->media_flags);
-
+				JSON_SET_SIMPLE_STR("rtpe_addr", &media->rtpe_connection_addr);
+				
 				json_update_sdes_params(builder, "media", media->unique_id, "sdes_in",
 						&media->sdes_in);
 				json_update_sdes_params(builder, "media", media->unique_id, "sdes_out",

@@ -834,7 +834,7 @@ next_il:
 	return em;
 }
 
-static void __assign_stream_fds(struct call_media *media, GQueue *intf_sfds, struct sdp_ng_flags *flags) {
+static void __assign_stream_fds(struct call_media *media, GQueue *intf_sfds) {
 	GList *l, *k;
 	struct packet_stream *ps;
 	struct stream_fd *sfd, *intf_sfd;
@@ -878,14 +878,14 @@ static void __assign_stream_fds(struct call_media *media, GQueue *intf_sfds, str
 	}
 }
 
-static int __wildcard_endpoint_map(struct call_media *media, unsigned int num_ports, struct sdp_ng_flags *flags) {
+static int __wildcard_endpoint_map(struct call_media *media, unsigned int num_ports) {
 	struct endpoint_map *em;
 
 	em = __get_endpoint_map(media, num_ports, NULL, NULL);
 	if (!em)
 		return -1;
 
-	__assign_stream_fds(media, &em->intf_sfds, flags);
+	__assign_stream_fds(media, &em->intf_sfds);
 
 	return 0;
 }
@@ -1080,7 +1080,7 @@ void __rtp_stats_update(GHashTable *dst, GHashTable *src) {
 	/* we leave previously added but now removed payload types in place */
 }
 
-static int __init_streams(struct call_media *A, struct call_media *B, const struct stream_params *sp, struct sdp_ng_flags *flags) {
+static int __init_streams(struct call_media *A, struct call_media *B, const struct stream_params *sp) {
 	GList *la, *lb;
 	struct packet_stream *a, *ax, *b;
 	unsigned int port_off = 0;
@@ -1167,15 +1167,6 @@ static int __init_streams(struct call_media *A, struct call_media *B, const stru
 		lb = lb->next;
 
 		port_off += 2;
-
-		for (GList *l = ax->sfds.head; l; l = l->next) {
-			struct stream_fd *sfd = l->data;
-			if (!sfd->rtpe_connection_addr.len) {
-				sfd->rtpe_connection_addr.s = call_malloc(A->call, 64);
-				format_network_address(&sfd->rtpe_connection_addr, a, flags, 0);
-				rlog(LOG_INFO, "Stored SFD media address %s",sfd->rtpe_connection_addr.s);
-			}
-		}
 
 	}
 
@@ -1807,6 +1798,18 @@ static void __update_media_id(struct call_media *media, struct call_media *other
 	}
 }
 
+static void __update_rtpe_address(struct call_media* media, struct sdp_ng_flags *flags) {
+	struct packet_stream *ps;
+	
+	if (media->rtpe_connection_addr.len || !media->streams.head)
+		return;
+	
+	ps = media->streams.head->data;
+	media->rtpe_connection_addr.s = call_malloc(media->call, 64);
+	format_network_address(&media->rtpe_connection_addr, ps, flags, 0);
+	rlog(LOG_INFO, "Stored media address %s",media->rtpe_connection_addr.s);
+}
+
 /* called with call->master_lock held in W */
 int monologue_offer_answer(struct call_monologue *other_ml, GQueue *streams,
 		struct sdp_ng_flags *flags)
@@ -2008,20 +2011,20 @@ int monologue_offer_answer(struct call_monologue *other_ml, GQueue *streams,
 		}
 
 		__num_media_streams(media, num_ports);
-		__assign_stream_fds(media, &em->intf_sfds, flags);
+		__assign_stream_fds(media, &em->intf_sfds);
 
 		if (__num_media_streams(other_media, num_ports)) {
 			/* new streams created on OTHER side. normally only happens in
 			 * initial offer. create a wildcard endpoint_map to be filled in
 			 * when the answer comes. */
-			if (__wildcard_endpoint_map(other_media, num_ports, flags))
+			if (__wildcard_endpoint_map(other_media, num_ports))
 				goto error_ports;
 		}
 
 init:
-		if (__init_streams(media, other_media, NULL, flags))
+		if (__init_streams(media, other_media, NULL))
 			return -1;
-		if (__init_streams(other_media, media, sp, flags))
+		if (__init_streams(other_media, media, sp))
 			return -1;
 
 		/* we are now ready to fire up ICE if so desired and requested */
@@ -2029,6 +2032,7 @@ init:
 		ice_update(media->ice_agent, NULL); /* this is in case rtcp-mux has changed */
 
 		recording_setup_media(media);
+		__update_rtpe_address(media, flags);
 	}
 
 	return 0;
