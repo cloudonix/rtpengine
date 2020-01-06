@@ -2033,6 +2033,7 @@ init:
 
 		recording_setup_media(media);
 		__update_rtpe_address(media, flags);
+		__update_rtpe_address(other_media, flags);
 	}
 
 	return 0;
