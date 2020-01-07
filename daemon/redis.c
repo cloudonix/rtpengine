@@ -302,7 +302,7 @@ err:
 
 
 void on_redis_notification(redisAsyncContext *actx, void *reply, void *privdata) {
-    rlog(LOG_WARN, "Start func on_redis_notification!");
+	rlog(LOG_WARN, "Start func on_redis_notification!");
 	struct redis *r = 0;
 	struct call *c = NULL;
 	str callid;
@@ -371,9 +371,9 @@ void on_redis_notification(redisAsyncContext *actx, void *reply, void *privdata)
 				goto err; // this no longer an error, but we'll still go there to bypass json_restore_call
 			}
 		}
-		rlog(LOG_WARN, "Start json_restore_call functio");
+		rlog(LOG_WARN, "Start json_restore_call function");
 		json_restore_call(r, &callid, CT_FOREIGN_CALL);
-		rlog(LOG_WARN, "End json_restore_call functio");
+		rlog(LOG_WARN, "End json_restore_call function");
 	}
 
 	if (strncmp(rr->element[3]->str,"del",3)==0) {
@@ -2300,6 +2300,7 @@ void redis_update_onekey(struct call *c, struct redis *r) {
 	if (!result)
 		goto err;
 
+	rlog(LOG_INFO, "Updating redis with call details");
 	redis_pipe(r, "SET "PB" %s", STR(&c->callid), result);
 	redis_pipe(r, "EXPIRE "PB" %i", STR(&c->callid), redis_expires_s);
 
