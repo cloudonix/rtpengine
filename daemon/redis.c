@@ -81,7 +81,7 @@ static int redisCommandNR(redisContext *r, const char *fmt, ...)
 
 static int redis_check_conn(struct redis *r);
 static void json_restore_call(struct redis *r, const str *id, enum call_type type);
-static void redis_update_endpoints(struct redis *r, struct call *call);
+static void redis_update_call_details(struct redis *r, struct call *call);
 static int redis_connect(struct redis *r, int wait);
 
 static void redis_pipe(struct redis *r, const char *fmt, ...) {
@@ -368,7 +368,7 @@ void on_redis_notification(redisAsyncContext *actx, void *reply, void *privdata)
 				call_destroy(c);
 			else {
 				rlog(LOG_WARN, "Trying to read new endpoints from redis");
-				redis_update_endpoints(r, c);
+				redis_update_call_details(r, c);
 				goto err; // this no longer an error, but we'll still go there to bypass json_restore_call
 			}
 		}
@@ -1704,11 +1704,12 @@ err1:
 		obj_put(c);
 }
 
-static void redis_update_endpoints(struct redis *r, struct call *c) {
+static void redis_update_call_details(struct redis *r, struct call *c) {
 	redisReply* rr_jsonStr;
 	struct redis_list streams;
 	struct redis_hash call, streamrh;
 	struct endpoint endpoint, advertised_endpoint;
+	unsigned ps_flags;
 	GList *pk;
 	struct packet_stream *ps;
 
@@ -1743,28 +1744,33 @@ static void redis_update_endpoints(struct redis *r, struct call *c) {
 		streamrh = streams.rh[i];
 		ps = pk->data;
 
+		ZERO(endpoint);
+		err = "could not read stream flags";
+		if (redis_hash_get_unsigned((unsigned int *) &ps_flags, &streamrh, "ps_flags"))
+			return err2;
 		err = "could not read stream endpoint";
 		if (redis_hash_get_endpoint(&endpoint, &streamrh, "endpoint"))
 			goto err2;
 		err = "could not read stream advertised_endpoint";
 		if (redis_hash_get_endpoint(&advertised_endpoint, &streamrh, "advertised_endpoint"))
 			goto err2;
-		
-		if (!ps->endpoint.port && endpoint.port) {
+
+		if (!ps->endpoint.port && endpoint.port && endpoint.address.family->af) {
 			ps->endpoint = endpoint;
-			updated = 1;
-		}
-		
-		if (!ps->advertised_endpoint.port && advertised_endpoint.port) {
 			ps->advertised_endpoint = advertised_endpoint;
+			ps->ps_flags = ps_flags;
 			updated = 1;
 		}
 	}
 
-	err = NULL;
-
 	if (updated)
 		rlog(LOG_INFO, "Updated stream endpoints from Redis");
+
+	updated = 0;
+
+	
+
+	err = NULL;
 err2:
 	json_destroy_list(&streams);
 err1:
