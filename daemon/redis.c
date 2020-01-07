@@ -1707,7 +1707,7 @@ static void redis_update_endpoints(struct redis *r, struct call *c) {
 	redisReply* rr_jsonStr;
 	struct redis_list streams;
 	struct redis_hash call, streamrh;
-	endpoint endpoint, advertised_endpoint;
+	struct endpoint endpoint, advertised_endpoint;
 	GList *pk;
 	struct packet_stream *ps;
 
