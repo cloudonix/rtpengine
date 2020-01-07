@@ -1707,6 +1707,7 @@ static void redis_update_endpoints(struct redis *r, struct call *c) {
 	redisReply* rr_jsonStr;
 	struct redis_list streams;
 	struct redis_hash call, streamrh;
+	endpoint endpoint, advertised_endpoint;
 	GList *pk;
 	struct packet_stream *ps;
 
@@ -1741,16 +1742,22 @@ static void redis_update_endpoints(struct redis *r, struct call *c) {
 		streamrh = streams.rh[i];
 		ps = pk->data;
 
-		if (ps->endpoint.address.family)
-			continue;
-
 		err = "could not read stream endpoint";
-		if (redis_hash_get_endpoint(&ps->endpoint, &streamrh, "endpoint"))
+		if (redis_hash_get_endpoint(&endpoint, &streamrh, "endpoint"))
 			goto err2;
 		err = "could not read stream advertised_endpoint";
-		if (redis_hash_get_endpoint(&ps->advertised_endpoint, &streamrh, "advertised_endpoint"))
+		if (redis_hash_get_endpoint(&advertised_endpoint, &streamrh, "advertised_endpoint"))
 			goto err2;
-		updated = 1;
+		
+		if (!ps->endpoint.port && endpoint.port) {
+			ps->endpoint = endpoint;
+			updated = 1;
+		}
+		
+		if (!ps->advertised_endpoint.port && advertised_endpoint.port) {
+			ps->advertised_endpoint = advertised_endpoint;
+			updated = 1;
+		}
 	}
 
 	err = NULL;
