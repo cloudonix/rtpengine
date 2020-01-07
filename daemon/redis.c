@@ -367,6 +367,7 @@ void on_redis_notification(redisAsyncContext *actx, void *reply, void *privdata)
 			if (IS_FOREIGN_CALL(c))
 				call_destroy(c);
 			else {
+				rlog(LOG_WARN, "Trying to read new endpoints from redis");
 				redis_update_endpoints(r, c);
 				goto err; // this no longer an error, but we'll still go there to bypass json_restore_call
 			}
