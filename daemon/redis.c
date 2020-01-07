@@ -81,6 +81,7 @@ static int redisCommandNR(redisContext *r, const char *fmt, ...)
 
 static int redis_check_conn(struct redis *r);
 static void json_restore_call(struct redis *r, const str *id, enum call_type type);
+static void redis_update_endpoints(struct redis *r, struct call *call);
 static int redis_connect(struct redis *r, int wait);
 
 static void redis_pipe(struct redis *r, const char *fmt, ...) {
@@ -366,13 +367,13 @@ void on_redis_notification(redisAsyncContext *actx, void *reply, void *privdata)
 			if (IS_FOREIGN_CALL(c))
 				call_destroy(c);
 			else {
-				rlog(LOG_WARN, "Redis-Notifier: Ignoring SET received for OWN call: %s\n", rr->element[2]->str);
-				goto err;
+				redis_update_endpoints(r, c);
+				goto err; // this no longer an error, but we'll still go there to bypass json_restore_call
 			}
 		}
 		rlog(LOG_WARN, "Start json_restore_call functio");
 		json_restore_call(r, &callid, CT_FOREIGN_CALL);
-        rlog(LOG_WARN, "End json_restore_call functio");
+		rlog(LOG_WARN, "End json_restore_call functio");
 	}
 
 	if (strncmp(rr->element[3]->str,"del",3)==0) {
@@ -1700,6 +1701,77 @@ err1:
 	}
 	if (c)
 		obj_put(c);
+}
+
+static void redis_update_endpoints(struct redis *r, struct call *c) {
+	redisReply* rr_jsonStr;
+	struct redis_list streams;
+	struct redis_hash call, streamrh;
+	GList *pk;
+	struct packet_stream *ps;
+
+	const char *err = 0;
+	int i, updated = 0;
+	JsonReader *root_reader =0;
+	JsonParser *parser =0;
+
+	rr_jsonStr = redis_get(r, REDIS_REPLY_STRING, "GET " PB, STR(&c->callid));
+	err = "could not retrieve JSON data from redis";
+	if (!rr_jsonStr)
+		goto err1;
+
+	parser = json_parser_new();
+	err = "could not parse JSON data";
+	if (!json_parser_load_from_data (parser, rr_jsonStr->str, -1, NULL))
+		goto err1;
+	root_reader = json_reader_new (json_parser_get_root (parser));
+	err = "could not read JSON data";
+	if (!root_reader)
+		goto err1;
+
+	if (json_get_hash(&call, "json", -1, root_reader))
+		goto err1;
+
+	err = "'streams' incomplete";
+	if (json_get_list_hash(&streams, "stream", &call, "num_streams", root_reader))
+		goto err1;
+
+	// review call streams and only update where needed
+	for (i = 0, pk = c->streams.head; pk && (i < streams.len); pk = pk->next, i++) {
+		streamrh = streams.rh[i];
+		ps = pk->data;
+
+		if (ps->endpoint.address.family)
+			continue;
+
+		err = "could not read stream endpoint";
+		if (redis_hash_get_endpoint(&ps->endpoint, &streamrh, "endpoint"))
+			goto err2;
+		err = "could not read stream advertised_endpoint";
+		if (redis_hash_get_endpoint(&ps->advertised_endpoint, &streamrh, "advertised_endpoint"))
+			goto err2;
+		updated = 1;
+	}
+
+	err = NULL;
+
+	if (updated)
+		rlog(LOG_INFO, "Updated stream endpoints from Redis");
+err2:
+	json_destroy_list(&streams);
+err1:
+	if (root_reader)
+		g_object_unref (root_reader);
+	if (parser)
+		g_object_unref (parser);
+	if (rr_jsonStr)
+		freeReplyObject(rr_jsonStr);
+	log_info_clear();
+	if (err) {
+		rlog(LOG_WARNING, "Failed to update endpoints for call ID '" STR_FORMAT_M "' from Redis: %s",
+		     STR_FMT_M(&c->callid),
+		     err);
+	}
 }
 
 struct thread_ctx {
