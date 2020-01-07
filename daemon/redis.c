@@ -1130,7 +1130,7 @@ static int redis_sfds(struct call *c, struct redis_list *sfds) {
 	socket_t *sock;
 	int port;
 	const char *err;
-	
+
 	for (i = 0; i < sfds->len; i++) {
 		rh = &sfds->rh[i];
 
@@ -1175,8 +1175,8 @@ static int redis_sfds(struct call *c, struct redis_list *sfds) {
 				goto err;
 			set_tos(sock, c->tos);
 		}
-
 		sfd = stream_fd_new(sock, c, loc);
+
 		sfds->ptrs[i] = sfd;
 	}
 	return 0;
@@ -1768,8 +1768,6 @@ static void redis_update_call_details(struct redis *r, struct call *c) {
 
 	updated = 0;
 
-	
-
 	err = NULL;
 err2:
 	json_destroy_list(&streams);
@@ -2007,6 +2005,7 @@ char* redis_encode_json(struct call *c) {
 				JSON_SET_SIMPLE_STR("logical_intf",&sfd->local_intf->logical->name);
 				JSON_SET_SIMPLE("local_intf_uid","%u",sfd->local_intf->unique_id);
 				JSON_SET_SIMPLE("stream","%u",sfd->stream->unique_id);
+
 			}
 			json_builder_end_object (builder);
 
