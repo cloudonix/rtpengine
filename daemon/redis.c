@@ -1769,9 +1769,8 @@ static int redis_update_call_tags(struct call *c, redis_call_t *redis_call) {
 static void redis_update_call_details(struct redis *r, struct call *c) {
 	redisReply* rr_jsonStr;
 	redis_call_t *redis_call = NULL;
-
-	const char *err = 0;
-	JsonParser *parser =0;
+	const char *err = NULL;
+	JsonParser *parser = NULL;
 
 	rr_jsonStr = redis_get(r, REDIS_REPLY_STRING, "GET " PB, STR(&c->callid));
 	err = "could not retrieve JSON data from redis";
