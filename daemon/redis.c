@@ -2877,9 +2877,9 @@ done:
 }
 
 static GQueue *redis_call_read_streams(JsonReader *reader) {
-	GQueue *call_streams, *call_sfds = NULL;
+	GQueue *call_streams = NULL, *call_sfds = NULL;
 	unsigned stream_idx;
-	str *stream_field;
+	str *stream_field = NULL;
 	redis_call_media_stream_t *stream;
 
 	if (!(call_sfds = redis_call_read_stream_fds(reader)))
@@ -2919,7 +2919,7 @@ done:
 static GQueue *redis_call_read_media(JsonReader *reader) {
 	int media_idx;
 	str *media_field = NULL;
-	GQueue *call_media, *call_tags = NULL, *call_streams = NULL;
+	GQueue *call_media = NULL, *call_tags = NULL, *call_streams = NULL;
 	redis_call_media_t *media = NULL;
 
 	if (!(call_tags = redis_call_read_tags(reader)))
