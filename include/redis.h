@@ -82,6 +82,8 @@ extern struct redis		*rtpe_redis_notify;
 extern struct event_base	*rtpe_redis_notify_event_base;
 extern struct redisAsyncContext *rtpe_redis_notify_async_context;
 
+
+
 #if !GLIB_CHECK_VERSION(2,40,0)
 INLINE gboolean g_hash_table_insert_check(GHashTable *h, gpointer k, gpointer v) {
 	gboolean ret = TRUE;
