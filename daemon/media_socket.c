@@ -755,7 +755,7 @@ static void release_port(socket_t *r, struct intf_spec *spec) {
 	iptables_del_rule(r);
 
 	if (r->is_foreign) {
-		__C_DBG("port %u is foreign so release is not needed");
+		__C_DBG("port %u is foreign so release is not needed", port);
 	} else if (close_socket(r) == 0) {
 		__C_DBG("port %u is released", port);
 		bit_array_clear(pp->ports_used, port);
