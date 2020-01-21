@@ -1546,7 +1546,7 @@ static void json_restore_call(struct redis *r, const str *callid, enum call_type
 		goto err1;
 
 	rlog(LOG_INFO, "Reading call '" STR_FORMAT_M "' data from redis, call looks like this: %s",
-	     STR_FMT_M(&c->callid), rr_jsonStr->str);
+	     STR_FMT_M(callid), rr_jsonStr->str);
 
 	parser = json_parser_new();
 	err = "could not parse JSON data";
