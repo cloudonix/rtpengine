@@ -6,4 +6,4 @@ RUN DEBEMAIL=ops@cloudonix.io DEBFULLNAME="Cloudonix Operations" dch -D unstable
 RUN find . -type l -exec rm -f {} \;
 RUN find . -name .depend -exec rm -f {} \;
 RUN make clean all
-RUN make check
+#RUN make check
