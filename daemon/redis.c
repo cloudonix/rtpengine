@@ -1846,9 +1846,6 @@ static void redis_update_call_details(struct redis *r, struct call *c) {
 	if (!rr_jsonStr)
 		goto fail;
 
-	rlog(LOG_INFO, "Reading call '" STR_FORMAT_M "' data from redis, call looks like this: %s",
-	     STR_FMT_M(&c->callid), rr_jsonStr->str);
-
 	parser = json_parser_new();
 	err = "could not parse JSON data";
 	if (!json_parser_load_from_data (parser, rr_jsonStr->str, -1, NULL))
@@ -1864,6 +1861,8 @@ static void redis_update_call_details(struct redis *r, struct call *c) {
 	}
 
 	c->last_signal = redis_call->last_signal;
+	rlog(LOG_INFO, "Reading call '" STR_FORMAT_M "' data from redis, call looks like this: %s",
+	     STR_FMT_M(&c->callid), rr_jsonStr->str);
 
 	err = "failed to update stream data";
 	if (redis_update_call_streams(c, redis_call))
