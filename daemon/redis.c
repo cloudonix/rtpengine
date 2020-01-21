@@ -81,6 +81,7 @@ static int redisCommandNR(redisContext *r, const char *fmt, ...)
 
 #define REDIS_FMT(x) (int) (x)->len, (x)->str
 
+char* redis_encode_json(struct call *c);
 static int redis_check_conn(struct redis *r);
 static void json_restore_call(struct redis *r, const str *id, enum call_type type);
 static void redis_update_call_details(struct redis *r, struct call *call);
@@ -1796,6 +1797,9 @@ static void redis_update_call_details(struct redis *r, struct call *c) {
 	if (!rr_jsonStr)
 		goto fail;
 
+	rlog(LOG_INFO, "Reading call '" STR_FORMAT_M "' data from redis, call looks like this: %s",
+	     STR_FMT_M(&c->callid), rr_jsonStr->str);
+
 	parser = json_parser_new();
 	err = "could not parse JSON data";
 	if (!json_parser_load_from_data (parser, rr_jsonStr->str, -1, NULL))
@@ -1816,6 +1820,10 @@ static void redis_update_call_details(struct redis *r, struct call *c) {
 	err = "failed to update payload data";
 	if (redis_update_call_payloads(c, redis_call))
 		goto fail;
+
+	char *reloaded = redis_encode_json(c);
+	rlog(LOG_INFO, "After updating call '" STR_FORMAT_M "' from redis, call looks like this: %s",
+	     STR_FMT_M(&c->callid), reloaded);
 
 	goto done;
 
