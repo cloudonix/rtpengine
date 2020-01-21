@@ -1545,6 +1545,9 @@ static void json_restore_call(struct redis *r, const str *callid, enum call_type
 	if (!rr_jsonStr)
 		goto err1;
 
+	rlog(LOG_INFO, "Reading call '" STR_FORMAT_M "' data from redis, call looks like this: %s",
+	     STR_FMT_M(&c->callid), rr_jsonStr->str);
+
 	parser = json_parser_new();
 	err = "could not parse JSON data";
 	if (!json_parser_load_from_data (parser, rr_jsonStr->str, -1, NULL))
@@ -1651,6 +1654,10 @@ static void json_restore_call(struct redis *r, const str *callid, enum call_type
 	}
 
 	err = NULL;
+
+	char *reloaded = redis_encode_json(c);
+	rlog(LOG_INFO, "After reading call '" STR_FORMAT_M "' from redis, call looks like this: %s",
+	     STR_FMT_M(&c->callid), reloaded);
 
 err8:
 	json_destroy_list(&maps);
