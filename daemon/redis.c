@@ -1096,6 +1096,7 @@ static int redis_hash_get_sdes_params(GQueue *out, const struct redis_hash *h, c
 				return 0;
 			return -1;
 		}
+		g_queue_push_tail(out, cps);
 
 		snprintf(key, sizeof(key), "%s-%u", k, iter++);
 		kk = key;
