@@ -2505,7 +2505,7 @@ void redis_update_onekey(struct call *c, struct redis *r) {
 	if (!result)
 		goto err;
 
-	rlog(LOG_INFO, "Updating redis with call details");
+	rlog(LOG_INFO, "Updating redis with call details: %s", result);
 	redis_pipe(r, "SET "PB" %s", STR(&c->callid), result);
 	redis_pipe(r, "EXPIRE "PB" %i", STR(&c->callid), redis_expires_s);
 
