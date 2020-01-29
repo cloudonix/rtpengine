@@ -305,7 +305,7 @@ err:
 
 
 void on_redis_notification(redisAsyncContext *actx, void *reply, void *privdata) {
-	rlog(LOG_WARN, "Start func on_redis_notification!");
+	rlog(LOG_INFO, "Start func on_redis_notification!");
 	struct redis *r = 0;
 	struct call *c = NULL;
 	str callid;
@@ -370,14 +370,14 @@ void on_redis_notification(redisAsyncContext *actx, void *reply, void *privdata)
 			if (IS_FOREIGN_CALL(c))
 				call_destroy(c);
 			else {
-				rlog(LOG_WARN, "Trying to read new endpoints from redis");
+				rlog(LOG_INFO, "Trying to read new endpoints from redis");
 				redis_update_call_details(r, c);
 				goto err; // this no longer an error, but we'll still go there to bypass json_restore_call
 			}
 		}
-		rlog(LOG_WARN, "Start json_restore_call function");
+		rlog(LOG_INFO, "Start json_restore_call function");
 		json_restore_call(r, &callid, CT_FOREIGN_CALL);
-		rlog(LOG_WARN, "End json_restore_call function");
+		rlog(LOG_INFO, "End json_restore_call function");
 	}
 
 	if (strncmp(rr->element[3]->str,"del",3)==0) {
@@ -394,7 +394,7 @@ void on_redis_notification(redisAsyncContext *actx, void *reply, void *privdata)
 		call_destroy(c);
 	}
 
-	rlog(LOG_WARN, "End func on_redis_notification!");
+	rlog(LOG_INFO, "End func on_redis_notification!");
 err:
 	if (c) {
 		// because of call_get(..)
@@ -1558,9 +1558,7 @@ static void json_restore_call(struct redis *r, const str *callid, enum call_type
 	if (!root_reader)
 		goto err1;
 
-    rlog(LOG_WARN, "Start call_get_or_create functio");
 	c = call_get_or_create(callid, type);
-    rlog(LOG_WARN, "End call_get_or_create functio");
 	err = "failed to create call struct";
 	if (!c)
 		goto err1;
