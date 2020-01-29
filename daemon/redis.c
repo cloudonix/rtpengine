@@ -2157,6 +2157,7 @@ char* redis_encode_json(struct call *c) {
 	struct call_monologue *ml, *ml2;
 	JsonBuilder *builder = json_builder_new ();
 	struct recording *rec = 0;
+	str *ptbuf;
 
 	char tmp[2048];
 
@@ -2380,10 +2381,9 @@ char* redis_encode_json(struct call *c) {
 			json_builder_begin_array (builder);
 			for (m = media->codecs_prefs_recv.head; m; m = m->next) {
 				pt = m->data;
-				JSON_ADD_STRING("%u/" STR_FORMAT "/%u/" STR_FORMAT "/" STR_FORMAT "/%i/%i",
-						pt->payload_type, STR_FMT(&pt->encoding),
-						pt->clock_rate, STR_FMT(&pt->encoding_parameters),
-						STR_FMT(&pt->format_parameters), pt->bitrate, pt->ptime);
+				ptbuf = codec_print_payload_type(pt);
+				JSON_ADD_STRING("%u/" STR_FORMAT, pt->payload_type, STR_FMT(ptbuf));
+				free(ptbuf);
 			}
 			json_builder_end_array (builder);
 
@@ -2392,10 +2392,9 @@ char* redis_encode_json(struct call *c) {
 			json_builder_begin_array (builder);
 			for (m = media->codecs_prefs_send.head; m; m = m->next) {
 				pt = m->data;
-				JSON_ADD_STRING("%u/" STR_FORMAT "/%u/" STR_FORMAT "/" STR_FORMAT "/%i/%i",
-						pt->payload_type, STR_FMT(&pt->encoding),
-						pt->clock_rate, STR_FMT(&pt->encoding_parameters),
-						STR_FMT(&pt->format_parameters), pt->bitrate, pt->ptime);
+				ptbuf = codec_print_payload_type(pt);
+				JSON_ADD_STRING("%u/" STR_FORMAT, pt->payload_type, STR_FMT(ptbuf));
+				free(ptbuf);
 			}
 			json_builder_end_array (builder);
 		}
