@@ -1886,7 +1886,7 @@ static int redis_update_call_crypto(struct call_media *m, redis_call_media_t *me
 	}
 	if (media->sdes_out && m->sdes_out.length != media->sdes_out->length) {
 		rlog(LOG_INFO, "Need update output crypto");
-		redis_update_call_crypto_sync_sdes_params(&m->sdes_in, media->sdes_in);
+		redis_update_call_crypto_sync_sdes_params(&m->sdes_out, media->sdes_out);
 	}
 
 	return 0;
