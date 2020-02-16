@@ -1692,7 +1692,7 @@ err1:
 static int redis_update_call_streams(struct call *c, redis_call_t *redis_call) {
 	GQueue* redis_call_streams;
 	redis_call_media_stream_t *stream;
-	unsigned int i, updated = 0;
+	unsigned int updated = 0;
 	struct packet_stream *ps;
 	GList *pk;
 	struct endpoint endpoint, advertised_endpoint;
@@ -1700,11 +1700,10 @@ static int redis_update_call_streams(struct call *c, redis_call_t *redis_call) {
 	if (!(redis_call_streams = redis_call_get_streams(redis_call)))
 		return -1;
 	// review call streams and only update where needed
-	for (i = 0, pk = c->streams.head; pk && (i < redis_call_streams->length); pk = pk->next, i++) {
+	for (pk = c->streams.head; pk; pk = pk->next) {
 		ps = pk->data;
 		ZERO(endpoint);
-		stream = g_queue_peek_nth(redis_call_streams, i);
-		rlog(LOG_INFO, "Updating stream %u (id %u)", i, ps->unique_id);
+		stream = g_queue_peek_nth(redis_call_streams, ps->unique_id);
 		if (stream->endpoint->len)
 			endpoint_parse_any(&endpoint, stream->endpoint->s);
 		if (stream->advertised_endpoint->len)
@@ -1887,12 +1886,12 @@ static int redis_update_call_crypto(struct call_media *m, redis_call_media_t *me
 	}
 
 	if (media->sdes_in && m->sdes_in.length != media->sdes_in->length) {
-		rlog(LOG_INFO, "Need update input crypto");
+		rlog(LOG_DEBUG, "Need update input crypto");
 		redis_update_call_crypto_sync_sdes_params(&m->sdes_in, media->sdes_in);
 		++needReinitCrypto;
 	}
 	if (media->sdes_out && m->sdes_out.length != media->sdes_out->length) {
-		rlog(LOG_INFO, "Need update output crypto");
+		rlog(LOG_DEBUG, "Need update output crypto");
 		redis_update_call_crypto_sync_sdes_params(&m->sdes_out, media->sdes_out);
 		++needReinitCrypto;
 	}
