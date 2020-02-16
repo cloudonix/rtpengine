@@ -81,7 +81,6 @@ static int redisCommandNR(redisContext *r, const char *fmt, ...)
 
 #define REDIS_FMT(x) (int) (x)->len, (x)->str
 
-char* redis_encode_json(struct call *c);
 static int redis_check_conn(struct redis *r);
 static void redis_update_call(str *callid, struct redis *r, struct call *call);
 static int redis_update_call_crypto(struct call_media *m, redis_call_media_t *media);
@@ -572,7 +571,6 @@ static int redis_notify(void) {
 }
 
 static void redis_disconnect(void) {
-	redisAsyncDisconnect(rtpe_redis_notify_async_context);
 	rtpe_redis_notify_async_context = NULL;
 }
 
@@ -634,6 +632,7 @@ void redis_notify_loop(void *d) {
 	redis_notify_subscribe_action(UNSUBSCRIBE_ALL, 0);
 
 	// free async context
+	redisAsyncDisconnect(rtpe_redis_notify_async_context);
 	redis_disconnect();
 }
 
@@ -1844,11 +1843,8 @@ static void redis_update_call_crypto_sync_sdes_params(GQueue *m_sdes_q, GQueue *
 		struct crypto_params_sdes *cps = g_slice_alloc0(sizeof(*cps));
 		g_queue_push_tail(m_sdes_q, cps);
 
-		if (redis_sdes->crypto_suite_name) {
+		if (redis_sdes->crypto_suite_name)
 			cps->params.crypto_suite = crypto_find_suite(redis_sdes->crypto_suite_name);
-			rlog(LOG_INFO, "Found crypto suite name %s, setting %s (%s)",
-			     redis_sdes->crypto_suite_name->s, cps->params.crypto_suite->name, cps->params.crypto_suite->dtls_name);
-		}
 		if (redis_sdes->mki) {
 			cps->params.mki_len = redis_sdes->mki->len;
 			if (cps->params.mki_len) {
@@ -1857,16 +1853,11 @@ static void redis_update_call_crypto_sync_sdes_params(GQueue *m_sdes_q, GQueue *
 			}
 		}
 		cps->tag = redis_sdes->tag;
-		if (redis_sdes->master_key) {
+		if (redis_sdes->master_key)
 			memcpy(cps->params.master_key, redis_sdes->master_key->s, redis_sdes->master_key->len);
-			rlog(LOG_INFO, "Set crypto master key sized %d", redis_sdes->master_key->len);
-		}
-		if (redis_sdes->master_salt) {
+		if (redis_sdes->master_salt)
 			memcpy(cps->params.master_salt, redis_sdes->master_salt->s, redis_sdes->master_salt->len);
-			rlog(LOG_INFO, "Set crypto master salt sized %d", redis_sdes->master_salt->len);
-		}
 		cps->params.session_params = redis_sdes->session_params;
-		rlog(LOG_INFO, "Done updating crypto params");
 	}
 }
 
