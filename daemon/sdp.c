@@ -1542,11 +1542,25 @@ warn:
 	return 0;
 }
 
+static int call_local_or_foreign_stream_address(char *buf, int *len, struct stream_fd *sfd) {
+	struct call_media *media = sfd->stream->media;
+
+	if (IS_OWN_CALL(sfd->call) || !media || !media->rtpe_connection_addr.len) {
+		call_stream_address46(buf, sfd->stream, SAF_ICE, len, sfd->local_intf, 0);
+	} else {
+		*len = sprintf(buf, "%s", media->rtpe_connection_addr.s);
+		/* rtpe_connection_addr contains the address family, that SAF_ICE doesn't need */
+		memmove(buf, buf + 4, (*len) -= 4);
+	}
+
+	return 0;
+}
+
 static int insert_ice_address(struct sdp_chopper *chop, struct stream_fd *sfd) {
 	char buf[64];
 	int len;
 
-	call_stream_address46(buf, sfd->stream, SAF_ICE, &len, sfd->local_intf, 0);
+	call_local_or_foreign_stream_address(buf, &len, sfd);
 	chopper_append(chop, buf, len);
 	chopper_append_printf(chop, " %u", sfd->socket.local.port);
 
@@ -1558,7 +1572,7 @@ static int insert_raddr_rport(struct sdp_chopper *chop, struct stream_fd *sfd) {
         int len;
 
 	chopper_append_c(chop, " raddr ");
-	call_stream_address46(buf, sfd->stream, SAF_ICE, &len, sfd->local_intf, 0);
+	call_local_or_foreign_stream_address(buf, &len, sfd);
 	chopper_append(chop, buf, len);
 	chopper_append_c(chop, " rport ");
 	chopper_append_printf(chop, "%u", sfd->socket.local.port);
