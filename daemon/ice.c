@@ -260,12 +260,8 @@ static struct ice_agent *__ice_agent_new(struct call_media *media) {
 
 /* called with the call lock held in W */
 void ice_agent_init(struct ice_agent **agp, struct call_media *media) {
-	struct ice_agent *ag;
-
-	if (*agp)
-		ag = *agp;
-	else
-		*agp = ag = __ice_agent_new(media);
+	if (!*agp)
+		*agp = __ice_agent_new(media);
 }
 
 static int __copy_cand(struct call *call, struct ice_candidate *dst, const struct ice_candidate *src) {
